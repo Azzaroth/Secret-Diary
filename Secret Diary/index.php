@@ -11,21 +11,65 @@
     die("There was an error connecting to the database.");
   }
 
+  session_start();
+
+  if(array_key_exists("user_email", $_COOKIE) || array_key_exists("email", $_SESSION)) {
+      header("Location: login.php");
+      exit();
+
+  } else if(!array_key_exists("user_email", $_COOKIE)) {
   if($_POST) {
 
-    $email = $_POST[0];
+    $email = $_POST["email"];
+    $password = $_POST["password"];
 
-    $checkQuery = "SELECT * FROM users WHERE email = ?";
+    $checkQuery = "SELECT `email`,`diary` FROM `users` WHERE `email` = (?) LIMIT 1";
     $checkStmt = $link->prepare($checkQuery);
     $checkStmt->bind_param("s",$email);
     $checkStmt->execute();
 
     $checkStmt->store_result();
-    $checkStmt->bind_result($col1);
+    $checkStmt->bind_result($userEmail,$userDiary);
 
-    while($checkStmt->fetch()) {
-      echo $col1;
-    }
+      if($checkStmt->fetch()) {
+        $_SESSION["email"] = $email;
+          if(isset($_POST["check"])) {
+           setcookie("user_email",$email,time() + 60*60); 
+           header("Location: login.php");
+           exit();
+          }
+         else {
+           header("Location: login.php");
+           exit();
+         }
+      } else {
+        $query = "INSERT INTO users (email,password) VALUES (?, ?)";
+        $stmt = $link->prepare($query);
+        $stmt->bind_param("ss",$email,$password);
+        $stmt->execute();
+
+        $query2 = "SELECT `id` FROM `users` WHERE `email` = (?) LIMIT 1";
+        $stmt2 = $link->prepare($query2);
+        $stmt2->bind_param("s",$email);
+        $stmt2->execute();
+
+        $stmt2->store_result();
+        $stmt2->bind_result($userId);
+
+        while($stmt2->fetch()) {
+          $hashId = hash("md5", $userId, false);
+          $hashSaltedPassword = hash("md5", $hashId.$password, false);
+          $hashQuery = "UPDATE `users` SET `password` = (?) WHERE `id` = (?) LIMIT 1";
+          $hashStmt = $link->prepare($hashQuery);
+          $hashStmt->bind_param("si",$hashSaltedPassword,$userId);
+          $hashStmt->execute();
+
+          header("Location: registered.php");
+        }   
+        
+      }
+  } else {
+  }
 
   
 
@@ -111,21 +155,21 @@
         <div id="center-square">        
         <h1 class="display-3">TextShare</h1>
         <p class="lead">Sign up, log in and start sharing text.</p>
-          <form method="POST">>
+          <form method="POST">
             <div class="form-group">
               <label for="email">Email address</label>
-              <input type="text" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email">
+              <input type="text" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="Enter email">
               <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
             </div>
             <div class="form-group">
               <label for="password">Password</label>
-              <input type="password" class="form-control" id="password" placeholder="Password">
+              <input type="password" class="form-control" id="password" name="password" placeholder="Password">
             </div>
             <div id="warning-section"></div>
             <div class="form-check wrapper">
               <label class="form-check-label">
-                <input type="checkbox" id="save" class="form-check-input">
-                Stat logged in
+                <input type="checkbox" id="save" name="check" class="form-check-input">
+                Stay logged in
               </label>
             </div>
             <button type="submit" name="submit" class="btn btn-primary btn-success wrapper-btn">Submit</button>
