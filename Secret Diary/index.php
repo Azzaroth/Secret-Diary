@@ -1,17 +1,6 @@
 <?php
 
-  $dburl = "param";
-  $dbname = "param";
-  $dbpassword = "param";
-  $dbuser = "param";
-
-  $link = mysqli_connect($dburl, $dbname, $dbpassword, $dbuser);
-
-  if (mysqli_connect_error()) {
-    die("There was an error connecting to the database.");
-  }
-
-  session_start();
+  include("sqlcookiessessions.php");
 
   if(array_key_exists("user_email", $_COOKIE) || array_key_exists("email", $_SESSION)) {
       header("Location: login.php");
@@ -23,25 +12,31 @@
     $email = $_POST["email"];
     $password = $_POST["password"];
 
-    $checkQuery = "SELECT `email`,`diary` FROM `users` WHERE `email` = (?) LIMIT 1";
+    $checkQuery = "SELECT * FROM `users` WHERE `email` = (?) LIMIT 1";
     $checkStmt = $link->prepare($checkQuery);
     $checkStmt->bind_param("s",$email);
     $checkStmt->execute();
 
     $checkStmt->store_result();
-    $checkStmt->bind_result($userEmail,$userDiary);
+    $checkStmt->bind_result($userId,$userEmail,$userPassword,$userDiary);
 
       if($checkStmt->fetch()) {
-        $_SESSION["email"] = $email;
-          if(isset($_POST["check"])) {
-           setcookie("user_email",$email,time() + 60*60); 
-           header("Location: login.php");
-           exit();
-          }
-         else {
-           header("Location: login.php");
-           exit();
+        $hashUserId = hash("md5", $userId, false);
+        $hashCompare = hash("md5", $hashUserId.$password, false);
+        if($hashCompare != $userPassword) {
+          header("Location: registered.php?pass=true");
+        } else {
+             $_SESSION["email"] = $email;
+            if(isset($_POST["check"])) {
+             setcookie("user_email",$email,time() + 60*60); 
+             header("Location: login.php");
+             exit();
+            }
+           else {
+             header("Location: login.php");
+             exit();
          }
+       }
       } else {
         $query = "INSERT INTO users (email,password) VALUES (?, ?)";
         $stmt = $link->prepare($query);
@@ -75,80 +70,11 @@
 
   }
 
-
-
-
-
-
+  include("header.php");
 
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
-
-    <style>
-
-      .jumbotron {
-        height: 100vh;
-        background-image: url('1.jpg');
-        background-size: 100% 100%;
-        margin-bottom: 0px;
-      }
-
-      #center-square {
-        padding: 40px 30px;
-        background-color: rgba(0,0,0,0.6);
-        border-radius: 10%;
-        margin: 100px auto ;
-        height: 500px;
-        width: 500px;
-      }
-
-      #center-square h1 {
-        color: white;
-        font-size: 550%;
-        text-align: center;
-        font-family: "Market", "Monaco", "monospace";
-      }
-
-      #center-square p {
-        color: white;
-        text-align: center;
-        font-size: 120%;
-        font-family: "Market", "Monaco", "monospace";
-      }
-
-      label {
-        color: white;
-        text-align: center;
-        font-size: 120%;
-        font-family: "Market", "Monaco", "monospace";
-      }
-
-      .wrapper {
-        margin: 6px 152px;
-      } 
-
-      .wrapper-btn {
-        margin: 0 170px;
-      }
-
-    </style>
-
-
-  </head>
-
-
   <body>
-
 
     <div class="jumbotron jumbotron-fluid">
       <div class="container">
@@ -178,12 +104,11 @@
       </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
-    <script
-    src="https://code.jquery.com/jquery-3.2.1.min.js"
-    integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-    crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+    <?php 
+
+     include("footer.php");
+
+    ?>
 
     <script>
 

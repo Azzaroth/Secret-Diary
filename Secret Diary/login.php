@@ -1,17 +1,6 @@
 <?php
 
-  $dburl = "param";
-  $dbname = "param";
-  $dbpassword = "param";
-  $dbuser = "param";
-
-  $link = mysqli_connect($dburl, $dbname, $dbpassword, $dbuser);
-
-  if (mysqli_connect_error()) {
-    die("There was an error connecting to the database.");
-  }
-
-  session_start();
+  include("sqlcookiessessions.php");
 
 	if(array_key_exists("user_email", $_COOKIE) || array_key_exists("email", $_SESSION)) {
 
@@ -34,52 +23,54 @@
 	    $checkStmt->bind_result($userEmail,$userDiary);
 
 	    while($checkStmt->fetch()) {
-	    	echo $userDiary;
+	    	$diaryContent = $userDiary;
 	    }
 	} else {
 		echo "You are not logged in.";
 		header("Location: index.php");
+		exit();
 	}
 
 
+	include("header.php");
+
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
-
- </head>
 
  <body>
 
+ 	<div class="jumbotron jumbotron-fluid">
+      <div class="container">
+        <div id="center-square"> 
+        	<h3 style="margin-top: -10px; margin-bottom: 13px; color: white; text-align: center;">Hello, <? if($_SESSION["email"]) echo $_SESSION["email"]; ?>!</h3>
+        	<form>
+        	<textarea type="textarea" id="textareaid" name="textareaidname"><? if($diaryContent) echo $diaryContent; ?></textarea>
+        	</form> 
+        	<form method="POST">  
+        	<input type="hidden" name="logout" value="log">
+        	<button type="submit" style="margin-left: 174px; margin-top: 20px;" id="btnlogout" class="btn btn-success">Log out</button>
+        	</form>
+        </div>
+      </div>
+ 	</div>
 
- 	<form method="POST">
- 		<input type="hidden" name="logout" value="log">
- 		<button type="submit">Log out
- 	</form>
+ 	<?php 
 
+   	 include("footer.php");
 
+    ?>
 
+    <script>
 
+    	$("#textareaid").bind("input propertychange", function() {
+    		$.ajax({
+    			type: "POST",
+    			url: "updatedb.php",
+    			data: { content: $("#textareaid").val() }
+    		});
+    	});
 
- 	 <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
-    <script
-    src="https://code.jquery.com/jquery-3.2.1.min.js"
-    integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-    crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
-
-
-
-
-
+    </script>
 
  </body>
  </html>
